@@ -1,0 +1,7 @@
+lib/
+include/GLFW/
+include/glm/
+*.a
+*.dll
+*.exe
+portals
