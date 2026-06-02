@@ -12,8 +12,8 @@ using namespace glm;
 using namespace std;
 
 struct Engine {
-    const int SCR_WIDTH =  720;
-    const int SCR_HEIGHT = 720;
+    const int SCR_WIDTH =  800;
+    const int SCR_HEIGHT = 600;
 
     GLFWwindow * window;
 
@@ -122,22 +122,26 @@ struct Engine {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
 
-        // 3 position floats
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
+        // 2 position floats
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (void*)0);
         glEnableVertexAttribArray(0);
 
         glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
 
         return VAO;
     }
 
-    void renderObject(GLuint VAO, vector<GLuint>& indices, vec3 color, mat4 model, mat4 view, mat4 proj) {
+    void renderObject(GLuint VAO, GLenum mode, vector<GLuint>& indices, vec3 color, mat4 model, mat4 view, mat4 proj) {
         glBindVertexArray(VAO);
+
         glUniform3f(u_objColorLoc, color.r, color.g, color.b);
         glUniformMatrix4fv(u_modelTransLoc, 1, GL_FALSE, glm::value_ptr(model));
         glUniformMatrix4fv(u_viewTransLoc, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(u_projTransLoc, 1, GL_FALSE, glm::value_ptr(proj));
-        glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, (void*)0);
+        glDrawElements(mode, indices.size(), GL_UNSIGNED_INT, (void*)0);
+
+        glBindVertexArray(0);
     }
 };
 
@@ -151,61 +155,30 @@ int main() {
 
     // room geometry
     vector<GLfloat> vertsRoom = {
-        // left wall
-       -5.0f, -5.0f,  0.0f,
-       -5.0f,  5.0f,  0.0f,
-       -5.0f, -5.0f, -10.0f,
-       -5.0f,  5.0f, -10.0f,
-        
-        // right wall
-        5.0f, -5.0f,  0.0f,
-        5.0f,  5.0f,  0.0f,
-        5.0f, -5.0f, -10.0f,
-        5.0f,  5.0f, -10.0f,
-
-        // floor
-       -5.0f, -5.0f,  0.0f,
-        5.0f, -5.0f,  0.0f,
-       -5.0f, -5.0f, -10.0f,
-        5.0f, -5.0f, -10.0f,
-
-        // ceiling
-       -5.0f,  5.0f,  0.0f,
-        5.0f,  5.0f,  0.0f,
-       -5.0f,  5.0f, -10.0f,
-        5.0f,  5.0f, -10.0f,
-
-        // back wall
-       -5.0f, -5.0f, -10.0f,
-       -5.0f,  5.0f, -10.0f,
-        5.0f, -5.0f, -10.0f,
-        5.0f,  5.0f, -10.0f
+        -15.0f,  11.0f,
+        -15.0f,   2.0f,
+        -10.0f,  -2.0f,
+        -10.0f, -11.0f,
+         15.0f, -11.0f,
+         15.0f,  11.0f
     };
     vector<GLuint> indsRoom = {
-        0, 1, 3,
-        0, 2, 3,
-
-        4, 5, 7,
-        4, 6, 7,
-
-        8, 9, 11,
-        8, 10, 11,
-
-        12, 13, 15,
-        12, 14, 15,
-
-        16, 17, 19,
-        16, 18, 19
+        0, 1,
+        1, 2,
+        2, 3,
+        3, 4,
+        4, 5,
+        5, 0
     };
     GLuint VAO_Room = eng.setupGeom(vertsRoom, indsRoom);
     vec3 color_Room = vec3(0.67f, 0.25f, 0.0f);
 
     // local -> NDC transformations (local -> global handled in loop)
     mat4 view = glm::translate(mat4(1.0f), vec3(0.0f, 0.0f, -15.0f));
-    mat4 projection = glm::perspective(glm::radians(45.0f), width/height, 0.1f, 100.0f);
+    mat4 projection = glm::ortho(-16.0f, 16.0f, -12.0f, 12.0f, 0.1f, 100.0f);
 
     // wireframe mode
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     float timePrev = 0.0f;
     mat4 model;
@@ -223,7 +196,7 @@ int main() {
 
         glUseProgram(shader);
 
-        eng.renderObject(VAO_Room, indsRoom, color_Room, mat4(1.0f), view, projection);
+        eng.renderObject(VAO_Room, GL_LINES, indsRoom, color_Room, mat4(1.0f), view, projection);
 
         glfwSwapBuffers(eng.window);
         glfwPollEvents();
