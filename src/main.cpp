@@ -11,6 +11,30 @@
 using namespace glm;
 using namespace std;
 
+struct Ball {
+    int radius;
+    int points;
+    vector<GLfloat> verts;
+    vector<GLuint> inds;
+    Ball(float _radius, int _points) : radius(_radius), points(_points), verts(2*_points), inds(2*_points) {
+        float dtheta = 2*pi<float>() / _points;
+        float theta = 0.0f;
+
+        // first point at 3 o'clock, subsequent points made counter-clockwise
+        for (int i = 0; i < _points; ++i) {
+            float vert_x = _radius * glm::cos(theta);
+            float vert_y = _radius * glm::sin(theta);
+            verts[2*i] = vert_x;
+            verts[2*i + 1] = vert_y;
+
+            inds[2*i] = i;
+            inds[2*i + 1] = (i+1) % _points;
+
+            theta += dtheta;
+        }
+    }
+};
+
 struct Engine {
     const int SCR_WIDTH =  800;
     const int SCR_HEIGHT = 600;
@@ -173,6 +197,13 @@ int main() {
     GLuint VAO_Room = eng.setupGeom(vertsRoom, indsRoom);
     vec3 color_Room = vec3(0.67f, 0.25f, 0.0f);
 
+    // ball geometry
+    Ball ball(0.5f, 20);
+    GLuint VAO_Ball = eng.setupGeom(ball.verts, ball.inds);
+    vec3 color_Ball = vec3(0.67f, 0.25f, 0.0f);
+    mat4 model;
+    model = glm::translate(mat4(1.0f), vec3(-2.0f, 5.0f, 0.0f));
+
     // local -> NDC transformations (local -> global handled in loop)
     mat4 view = glm::translate(mat4(1.0f), vec3(0.0f, 0.0f, -15.0f));
     mat4 projection = glm::ortho(-16.0f, 16.0f, -12.0f, 12.0f, 0.1f, 100.0f);
@@ -181,7 +212,6 @@ int main() {
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     float timePrev = 0.0f;
-    mat4 model;
     while (!glfwWindowShouldClose(eng.window)) {
         // glClearColor(0.53f, 0.81f, 0.98f, 1.0f);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -197,6 +227,7 @@ int main() {
         glUseProgram(shader);
 
         eng.renderObject(VAO_Room, GL_LINES, indsRoom, color_Room, mat4(1.0f), view, projection);
+        eng.renderObject(VAO_Ball, GL_LINES, ball.inds, color_Ball, model, view, projection);
 
         glfwSwapBuffers(eng.window);
         glfwPollEvents();
