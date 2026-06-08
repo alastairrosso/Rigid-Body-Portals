@@ -8,6 +8,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "sim.h"
+
 using namespace glm;
 using namespace std;
 
@@ -175,7 +177,7 @@ int main() {
     const float height = (float) eng.SCR_HEIGHT;
     GLuint shader = eng.createShaderProg();
 
-    float dt = 0.01f;
+    float dt = 0.001f;
 
     // room geometry
     vector<GLfloat> vertsRoom = {
@@ -202,7 +204,6 @@ int main() {
     GLuint VAO_Ball = eng.setupGeom(ball.verts, ball.inds);
     vec3 color_Ball = vec3(0.67f, 0.25f, 0.0f);
     mat4 model;
-    model = glm::translate(mat4(1.0f), vec3(-2.0f, 5.0f, 0.0f));
 
     // local -> NDC transformations (local -> global handled in loop)
     mat4 view = glm::translate(mat4(1.0f), vec3(0.0f, 0.0f, -15.0f));
@@ -212,6 +213,7 @@ int main() {
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     float timePrev = 0.0f;
+    Sim sim(dt);
     while (!glfwWindowShouldClose(eng.window)) {
         // glClearColor(0.53f, 0.81f, 0.98f, 1.0f);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -219,14 +221,16 @@ int main() {
 
         // update dt
         float timeValue = (float)glfwGetTime();
-        if (timeValue - timePrev > dt) {
-            // sim.update();
-            timePrev = timeValue;
+        while (timeValue - timePrev > dt) {
+            sim.update();
+            timePrev += dt;
         }
 
         glUseProgram(shader);
 
         eng.renderObject(VAO_Room, GL_LINES, indsRoom, color_Room, mat4(1.0f), view, projection);
+
+        model = glm::translate(mat4(1.0f), vec3(sim.getBallPos(), 0.0f));
         eng.renderObject(VAO_Ball, GL_LINES, ball.inds, color_Ball, model, view, projection);
 
         glfwSwapBuffers(eng.window);

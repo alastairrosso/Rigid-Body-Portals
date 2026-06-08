@@ -1,6 +1,7 @@
 lib/
 include/GLFW/
 include/glm/
+.vscode/
 *.a
 *.dll
 *.exe
